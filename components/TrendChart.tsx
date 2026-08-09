@@ -56,7 +56,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
               fontSize: 12,
               fontFamily: "var(--font-mono)",
             }}
-            formatter={(value: number) => [`${value.toFixed(0)}%`, "Success rate"]}
+            formatter={(value) => [`${Number(value ?? 0).toFixed(0)}%`, "Success rate"]}
           />
           <Line
             type="monotone"
