@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "playwright install chromium && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate && playwright install chromium",
+    "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "playwright:install": "playwright install --with-deps chromium"
