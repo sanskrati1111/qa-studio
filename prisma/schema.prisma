@@ -1,0 +1,56 @@
+// Prisma schema for QA Automation Test Studio
+// Local dev: SQLite (zero setup). Production: swap provider to "postgresql"
+// and point url to your Supabase/Neon connection string — no other changes needed.
+//
+// NOTE: SQLite doesn't support native enum types in Prisma, so status/category
+// fields are plain Strings here with the allowed values documented inline.
+// TypeScript-level string literal unions (in lib/testRunner.ts, lib/ai.ts,
+// and the components) give you the same safety at the code level.
+// If/when you move to Postgres, you can convert these to real `enum` blocks —
+// Postgres supports them natively.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Run {
+  id            String     @id @default(cuid())
+  sourceAUrl    String
+  sourceBUrl    String
+  status        String     @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  successRate   Float?     // 0–100, computed after completion
+  totalDuration Int?       // milliseconds
+  errorMessage  String?
+  createdAt     DateTime   @default(now())
+  completedAt   DateTime?
+
+  testCases     TestCase[]
+}
+
+model TestCase {
+  id             String   @id @default(cuid())
+  runId          String
+  run            Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  category       String   // FUNCTIONAL | UI
+  title          String
+  expectedResult String
+  actualResult   String
+  status         String   // PASS | FAIL
+  durationMs     Int
+  errorDetail    String?  // stack trace / diff info if failed
+
+  // Visual/UI test fields — only populated for category = "UI"
+  viewport         String? // "desktop" | "tablet" | "mobile"
+  screenshotAUrl   String? // path under /public, e.g. /runs/{runId}/desktop-a.png
+  screenshotBUrl   String?
+  diffImageUrl     String? // pixel-diff overlay image
+  diffPercent      Float?  // % of pixels that differ
+
+  createdAt      DateTime @default(now())
+}
