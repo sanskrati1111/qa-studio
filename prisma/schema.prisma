@@ -22,7 +22,8 @@ model Run {
   id            String     @id @default(cuid())
   sourceAUrl    String
   sourceBUrl    String
-  status        String     @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  status        String     @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED | CANCELLED
+  cancelled     Boolean    @default(false)     // Flag to signal cancellation
   successRate   Float?     // 0–100, computed after completion
   totalDuration Int?       // milliseconds
   errorMessage  String?

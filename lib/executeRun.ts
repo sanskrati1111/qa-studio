@@ -26,11 +26,31 @@ export async function executeRun(
   await prisma.run.update({ where: { id: runId }, data: { status: "RUNNING" } });
 
   try {
+    // Check if cancellation was requested before starting tests
+    let run = await prisma.run.findUnique({ where: { id: runId } });
+    if (run?.cancelled) {
+      await prisma.run.update({
+        where: { id: runId },
+        data: { status: "CANCELLED", completedAt: new Date() },
+      });
+      return;
+    }
+
     const [{ results: functionalResults, pageASummary, pageBSummary }, visualResults] =
       await Promise.all([
         runFunctionalComparison(sourceAUrl, sourceBUrl),
         includeUi ? runVisualComparison(runId, sourceAUrl, sourceBUrl) : Promise.resolve([]),
       ]);
+
+    // Check again if cancellation was requested during test execution
+    run = await prisma.run.findUnique({ where: { id: runId } });
+    if (run?.cancelled) {
+      await prisma.run.update({
+        where: { id: runId },
+        data: { status: "CANCELLED", completedAt: new Date() },
+      });
+      return;
+    }
 
     // AI-assisted extra test cases — one call per run to control cost.
     // Failure here should never fail the whole run: rule-based results
@@ -40,6 +60,16 @@ export async function executeRun(
       aiCases = await generateAiTestCases(pageASummary, pageBSummary);
     } catch (err) {
       console.error("AI test case generation failed (non-fatal):", err);
+    }
+
+    // Check one more time before finalizing
+    run = await prisma.run.findUnique({ where: { id: runId } });
+    if (run?.cancelled) {
+      await prisma.run.update({
+        where: { id: runId },
+        data: { status: "CANCELLED", completedAt: new Date() },
+      });
+      return;
     }
 
     const allResults: TestResult[] = [

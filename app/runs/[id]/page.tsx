@@ -6,6 +6,7 @@ import { TestCaseTable } from "@/components/TestCaseTable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { RunInProgress } from "@/components/RunInProgress";
+import { CancelButton } from "@/components/CancelButton";
 
 export const dynamic = "force-dynamic";
 
@@ -56,8 +57,11 @@ export default async function RunReportPage({
                 Export CSV
               </a>
             )}
+            {(run.status === "RUNNING" || run.status === "PENDING") && (
+              <CancelButton runId={run.id} />
+            )}
             <StatusBadge
-              status={run.status === "COMPLETED" ? "PASS" : run.status === "FAILED" ? "FAIL" : "RUNNING"}
+              status={run.status === "COMPLETED" ? "PASS" : run.status === "FAILED" ? "FAIL" : run.status === "CANCELLED" ? "CANCELLED" : "RUNNING"}
             />
           </div>
         </div>
@@ -69,6 +73,12 @@ export default async function RunReportPage({
         <div className="rounded-lg border border-fail/30 bg-fail-bg px-5 py-4">
           <p className="text-[13.5px] font-medium text-fail">Run failed to complete</p>
           <p className="mt-1 text-[13px] text-fail/80 font-mono">{run.errorMessage}</p>
+        </div>
+      )}
+
+      {run.status === "CANCELLED" && (
+        <div className="rounded-lg border border-warn/30 bg-warn-bg px-5 py-4">
+          <p className="text-[13.5px] font-medium text-warn">Run was cancelled</p>
         </div>
       )}
 
